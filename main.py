@@ -54,7 +54,7 @@ def main():
     data_module.setup()
     train_data = data_module.train_dataloader()
     valid_data = data_module.val_dataloader()
-    test_data = data_module.test_dataloader()
+    #test_data = data_module.test_dataloader()
 
     """
     notes
