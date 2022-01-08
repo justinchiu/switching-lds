@@ -130,6 +130,7 @@ class LMDataModule(pl.LightningDataModule):
             tokenizer = tokenizer,
             mlm = False,
             return_tensors = "np", # return numpy tensors for jax
+            pad_to_multiple_of = 32,
         )
 
         train_dataset = tokenized_datasets["train"]

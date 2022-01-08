@@ -12,6 +12,7 @@ class LanguageModel(eqx.Module):
     def score(
         self,
         sentence: jnp.ndarray,
+        state: Optional[jnp.ndarray],
     ) -> float:
         """ Score a sentence by computing
             log p(sentence) = \sum_t log p(word_t | words_<t)
