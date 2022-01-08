@@ -21,18 +21,19 @@ class Trainer:
 
         self._steps = 0 # number of gradient steps
 
-    def loss_fn(model, sentences, lengths):
+    # overload this in subclasses
+    def loss_fn(model, sentences, mask):
         log_probs = jax.vmap(model.score)(sentences, lengths)
-        return jnp.sum(log_probs)
+        return jnp.sum(log_probs[mask])
 
     @jax.jit
     @jax.value_and_grad
-    def loss_and_grad(model, sentences, lengths):
-        return self.loss_fn(model, sentences, lengths)
+    def loss_and_grad(model, sentences, mask):
+        return self.loss_fn(model, sentences, mask)
 
     @jax.jit
-    def loss(model, sentences, lengths)
-        return self.loss_fn(model, sentences, lengths)
+    def loss(model, sentences, mask):
+        return self.loss_fn(model, sentences, mask)
 
     def loop(self, data, update=False):
         total_loss = 0
@@ -40,10 +41,9 @@ class Trainer:
         for iter, batch in enumerate(data):
             mask = batch["attention_mask"]
             sentences = batch["input_ids"]
-            lengths = jnp.sum(mask, dim=0) - 1
-            nwords = jnp.sum(lengths)
+            nwords = jnp.sum(mask)
             if update:
-                loss, grads = self.loss_and_grad(self.model, sentences)
+                loss, grads = self.loss_and_grad(self.model, sentences, mask)
                 # divide grad by nwords
                 # clip grad (can we merge these with optimizer?)
                 # apply optimizer
@@ -52,7 +52,7 @@ class Trainer:
                 # number of gradient steps
                 self._steps += 1
             else:
-                loss = self.loss(self.model, sentences)
+                loss = self.loss(self.model, sentences, mask)
             loss += total_loss
             total_n_words += nwords
         return total_loss, total_n_words
