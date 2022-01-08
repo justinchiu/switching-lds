@@ -16,27 +16,32 @@ class Hmm(LanguageModel):
     def __init__(self, num_states, num_outputs, key):
         start_key, transition_key, emission_key = jax.random.split(key, 3)
         epsilon = 1e-3
-        self.start = jax.random.uniform(
+
+        start = jax.random.uniform(
             start_key,
             shape = (num_states,),
             minval = -epsilon,
             maxval = epsilon,
         )
-        self.transition = jax.random.uniform(
+        transition = jax.random.uniform(
             transition_key,
             shape = (num_states, num_states),
             minval = -epsilon,
             maxval = epsilon,
         )
-        self.emission = jax.random.uniform(
+        emission = jax.random.uniform(
             emission_key,
             shape = (num_states, num_outputs),
             minval = -epsilon,
             maxval = epsilon,
         )
 
-    def f(log_state: jnp.ndarray, x: int) -> Tuple[jnp.ndarray, float]:
-        log_emit = log_state[:,None] + self.emission[:,x]
+        self.start = start - lse(start)
+        self.transition = transition - lse(transition, axis=-1, keepdims=True)
+        self.emission = emission - lse(emission, axis=-1, keepdims=True)
+
+    def f(self, log_state: jnp.ndarray, x: int) -> Tuple[jnp.ndarray, float]:
+        log_emit = log_state + self.emission[:,x]
         log_Z = lse(log_emit)
         un_log_next_state = lse(log_emit[:,None] + self.transition, axis=0)
         log_next_state = un_log_next_state - log_Z
@@ -45,7 +50,7 @@ class Hmm(LanguageModel):
     def score(
         self,
         sentence: jnp.ndarray,
-        state: Optional[jnp.ndarray],
+        state: Optional[jnp.ndarray] = None,
     ) -> float:
         """ Score a sentence by computing
             log p(sentence) = \sum_t log p(word_t | words_<t)
@@ -61,7 +66,7 @@ class Hmm(LanguageModel):
             init = state if state else self.start,
             xs = sentence,
         )
-        return log_p_words, log_next_state
+        return log_p_words, next_state
 
 
     def log_p_next(
@@ -74,3 +79,4 @@ class Hmm(LanguageModel):
             log p(next | prefix)
         """
         raise NotImplementedError
+

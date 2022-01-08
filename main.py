@@ -1,6 +1,8 @@
 # Adapted from https://github.com/yang-zhang/lightning-language-modeling/blob/main/language_model.py
 
 from argparse import ArgumentParser
+import jax
+import optax
 
 import pytorch_lightning as pl
 from transformers import (
@@ -10,10 +12,10 @@ from transformers import (
 )
 
 from data import LMDataModule
+from trainers.trainer import Trainer
 
 
 def main():
-    pl.seed_everything(1234)
 
     # ------------
     # args
@@ -33,7 +35,12 @@ def main():
     parser.add_argument('--train_batch_size', type=int, default=4)
     parser.add_argument('--val_batch_size', type=int, default=8)
     parser.add_argument('--dataloader_num_workers', type=int, default=4)
+    parser.add_argument('--num_states', type=int, default=1024)
+    parser.add_argument('--key', type=int, default=1234)
+    parser.add_argument('--lr', type=float, default=1e-3)
     args = parser.parse_args()
+
+    pl.seed_everything(args.key)
 
     # ------------
     # data
@@ -73,15 +80,24 @@ def main():
     # ------------
     # model
     # ------------
-    lmmodel = None
+    V = data_module.tokenizer.vocab_size
+    Z = args.num_states
+
+    key = jax.random.PRNGKey(args.key)
+
+    from models.hmm import Hmm
+    model = Hmm(Z, V, key)
 
     # ------------
     # training
     # ------------
-    #trainer = pl.Trainer.from_argparse_args(args)
-    #trainer.fit(lmmodel, data_module)
+    trainer = Trainer(model, optax.adamw(args.lr), data_module)
+    trainer.fit()
 
-    import pdb; pdb.set_trace()
+
+    # ------------
+    # cleanup
+    # ------------
     data_module.teardown()
 
 

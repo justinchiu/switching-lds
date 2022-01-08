@@ -33,6 +33,7 @@ class LMDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
+        self.tokenizer = tokenizer
         extension = self.train_file.split(".")[-1]
         if extension in ("txt", "raw"):
             extension = "text"

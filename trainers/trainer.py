@@ -7,6 +7,18 @@ import pytorch_lightning as pl
 
 from models.language_model import LanguageModel
 
+def loss_fn(model, sentences, mask):
+    log_probs, state = jax.vmap(model.score)(sentences)
+    return jnp.sum(log_probs[mask])
+
+@jax.jit
+@jax.value_and_grad
+def loss_and_grad(model, sentences, mask):
+    return loss_fn(model, sentences, mask) / jnp.sum(mask)
+
+@jax.jit
+def loss(model, sentences, mask):
+    return loss_fn(model, sentences, mask)
 
 class Trainer:
     def __init__(
@@ -16,24 +28,13 @@ class Trainer:
         data_module: pl.LightningDataModule,
     ):
         self.model = model
-        self.optimizer = optimizer
         self.data_module = data_module
 
         self._steps = 0 # number of gradient steps
 
-    # overload this in subclasses
-    def loss_fn(model, sentences, mask):
-        log_probs = jax.vmap(model.score)(sentences, lengths)
-        return jnp.sum(log_probs[mask])
+        self.optimizer = optimizer
+        self.opt_state= optimizer.init(model)
 
-    @jax.jit
-    @jax.value_and_grad
-    def loss_and_grad(model, sentences, mask):
-        return self.loss_fn(model, sentences, mask)
-
-    @jax.jit
-    def loss(model, sentences, mask):
-        return self.loss_fn(model, sentences, mask)
 
     def loop(self, data, update=False):
         total_loss = 0
@@ -42,27 +43,34 @@ class Trainer:
             mask = batch["attention_mask"]
             sentences = batch["input_ids"]
             nwords = jnp.sum(mask)
+            # DBG
             if update:
-                loss, grads = self.loss_and_grad(self.model, sentences, mask)
+                loss, grads = loss_and_grad(self.model, sentences, mask)
                 # divide grad by nwords
                 # clip grad (can we merge these with optimizer?)
                 # apply optimizer
-                eqn.apply_updates(self.model, self.optimizer(grads))
+                updates, self.opt_state = self.optimizer.update(
+                    grads, self.opt_state, self.model)
+                self.model = eqn.apply_updates(self.model, updates)
 
                 # number of gradient steps
                 self._steps += 1
+
+                # scale back up, since for the gradient we need to average
+                loss = loss * nwords
             else:
-                loss = self.loss(self.model, sentences, mask)
-            loss += total_loss
+                loss = loss(self.model, sentences, mask)
+            total_loss += loss
             total_n_words += nwords
         return total_loss, total_n_words
 
-    def fit(self, model, epochs=15):
+    def fit(self, epochs=15):
         for epoch in range(epochs):
             loss, n_words = self.loop(
                 self.data_module.train_dataloader(),
                 update=True,
             )
             # perform logging
+            import pdb; pdb.set_trace()
 
 
