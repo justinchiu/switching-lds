@@ -27,17 +27,21 @@ def main():
                         default="data/wikitext-2/wiki.train.small.raw")
     parser.add_argument('--validation_file', type=str,
                         default="data/wikitext-2/wiki.valid.small.raw")
-    parser.add_argument('--line_by_line', action='store_true', default=True)
+    parser.add_argument('--no_line_by_line', action='store_true', default=False)
+    parser.add_argument('--use_wandb', action='store_true', default=False)
     parser.add_argument('--pad_to_max_length', action='store_true', default=False)
     parser.add_argument('--preprocessing_num_workers', type=int, default=2)
     parser.add_argument('--overwrite_cache', action='store_true', default=False)
     parser.add_argument('--max_seq_length', type=int, default=32)
-    parser.add_argument('--train_batch_size', type=int, default=4)
-    parser.add_argument('--val_batch_size', type=int, default=8)
+    parser.add_argument('--train_batch_size', type=int, default=32)
+    parser.add_argument('--val_batch_size', type=int, default=32)
     parser.add_argument('--dataloader_num_workers', type=int, default=4)
+
     parser.add_argument('--num_states', type=int, default=1024)
     parser.add_argument('--key', type=int, default=1234)
+
     parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--epochs', type=int, default=15)
     args = parser.parse_args()
 
     pl.seed_everything(args.key)
@@ -49,7 +53,7 @@ def main():
         model_name_or_path=args.model_name_or_path,
         train_file=args.train_file,
         validation_file=args.validation_file,
-        line_by_line=args.line_by_line,
+        line_by_line=not args.no_line_by_line,
         pad_to_max_length=args.pad_to_max_length,
         preprocessing_num_workers=args.preprocessing_num_workers,
         overwrite_cache=args.overwrite_cache,
@@ -86,14 +90,14 @@ def main():
     key = jax.random.PRNGKey(args.key)
 
     from models.hmm import Hmm
-    model = Hmm(Z, V, key)
+    model_init = Hmm(Z, V, key)
+    # this will not be mutated, need to get model from trainer.model
 
     # ------------
     # training
     # ------------
-    trainer = Trainer(model, optax.adamw(args.lr), data_module)
-    trainer.fit()
-
+    trainer = Trainer(model_init, optax.adamw(args.lr), data_module)
+    trainer.fit(args.epochs)
 
     # ------------
     # cleanup
