@@ -1,3 +1,14 @@
+
+# datastuff
+pytorch-lightning
+datasets
+transformers
+
+# jax stuff
+jax
+equinox
+optax
+
+# general
 numpy
-torch
-torchtext
+wandb
