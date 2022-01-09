@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--val_batch_size', type=int, default=32)
     parser.add_argument('--dataloader_num_workers', type=int, default=4)
 
-    parser.add_argument('--num_states', type=int, default=1024)
+    parser.add_argument('--num_states', type=int, default=32)
     parser.add_argument('--key', type=int, default=1234)
 
     parser.add_argument('--lr', type=float, default=1e-3)

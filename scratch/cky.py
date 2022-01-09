@@ -124,8 +124,8 @@ print(jnp.allclose(alpha3, alpha32))
 print(jnp.max(jnp.abs(alpha32 - alpha31)))
 
 # test cky level
-alphasT1 = alphasT.at[2, :T+1-3].set(cky_level(T, 3, alphasT))
-alphasT1 = alphasT1.at[3, :T+1-4].set(cky_level(T, 4, alphasT1))
-alphasT1 = alphasT1.at[4, :T+1-5].set(cky_level(T, 5, alphasT1))
+alphasT1 = alphasT.at[2, :T+1-3].set(cky_level(alphasT, 3, T))
+alphasT1 = alphasT1.at[3, :T+1-4].set(cky_level(alphasT1, 4, T))
+alphasT1 = alphasT1.at[4, :T+1-5].set(cky_level(alphasT1, 5, T))
 
 print(jnp.allclose(alphasT1[2,:3], alpha32))

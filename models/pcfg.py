@@ -7,6 +7,7 @@ from jax.scipy.special import logsumexp as lse
 import equinox as eqx # type: ignore
 
 from models.language_model import LanguageModel
+from inference.cky import cky
 
 class Pcfg(LanguageModel):
     start: jnp.ndarray
@@ -53,8 +54,8 @@ class Pcfg(LanguageModel):
         # include BOS and EOS for now
 
         emissions = self.emission[:, sentence]
+        (chart, T), levels = cky(emissions)
         import pdb; pdb.set_trace()
-
 
         return log_p_words, None
 
