@@ -14,6 +14,8 @@ class Hmm(LanguageModel):
     emission: jnp.ndarray
 
     def __init__(self, num_states, num_outputs, key):
+        super().__init__()
+
         start_key, transition_key, emission_key = jax.random.split(key, 3)
         epsilon = 1e-3
 

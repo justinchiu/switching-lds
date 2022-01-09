@@ -91,6 +91,8 @@ def main():
 
     from models.hmm import Hmm
     model_init = Hmm(Z, V, key)
+    from models.pcfg import Pcfg
+    model_init = Pcfg(Z, V, key)
     # this will not be mutated, need to get model from trainer.model
 
     # ------------

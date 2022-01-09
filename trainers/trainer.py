@@ -87,7 +87,15 @@ class Trainer:
                 self.data_module.train_dataloader(),
                 update=True,
             )
+            valid_loss, valid_n_words = self.loop(
+                self.data_module.val_dataloader(),
+                update=False,
+            )
             # perform end of epoch logging
-            import pdb; pdb.set_trace()
+            if self.use_wandb:
+                wandb.log({
+                    "epoch_train_loss": loss / n_words,
+                    "epoch_valid_loss": valid_loss / valid_n_words,
+                }, step = epoch)
 
 
