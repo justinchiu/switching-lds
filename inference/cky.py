@@ -10,20 +10,20 @@ def cky_level(alphas:jnp.ndarray, W:int, T:int) -> jnp.ndarray:
     First get left indices and right indices, then combine.
     See scratch/cky.py to play with indexing logic.
     """
-    left_scores1 = alphas[
+    left_scores = alphas[
         np.arange(0,W-1),
         np.arange(T+1-W)[:,None],
     ]
-    right_scores1 = alphas[
+    right_scores = alphas[
         np.arange(W-2,-1,-1),
         np.vstack([np.arange(x, x+W-1) for x in range(1, T+1-W+1)]),
     ]
     # number of start points x number of split points x num_states^2
-    outer_product1 = (
-        left_scores1[:,:,:,None] + right_scores1[:,:,None,:]
+    outer_product = (
+        left_scores[:,:,:,None] + right_scores[:,:,None,:]
     ).reshape(T+1-W, W-1, -1)
     return lse((
-        transition[None,:,None,:] + outer_product1[:,None,:,:]
+        transition[None,:,None,:] + outer_product[:,None,:,:]
     ).reshape(T+1-W, num_states, -1), axis=-1)
 
 def cky(alpha0):
