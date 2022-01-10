@@ -10,7 +10,7 @@ def cky_level(alphas:jnp.ndarray, W:int, T:int) -> jnp.ndarray:
     First get left indices and right indices, then combine.
     See scratch/cky.py to play with indexing logic.
 
-    alpha: span_length x start_position x state
+    alphas: span_length-1 x start_position x state
     """
     left_scores = alphas[
         jnp.arange(0,W-1),
